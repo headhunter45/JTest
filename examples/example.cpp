@@ -9,19 +9,19 @@
 using namespace JTest;
 using namespace MyNS;
 
-using std::wstring;
+using std::string;
 using std::vector;
-using std::wcout;
+using std::cout;
 using std::exception;
 using std::endl;
 
-// const vector<wstring>& might stop being a reference
-testresults_t test_ClassToTest_main(int argc, const vector<wstring>& argv) {
+// const vector<string>& might stop being a reference
+testresults_t test_ClassToTest_main(const vector<string>& argv) {
     return execute(
-        describe(L"ClassToTest", [](){
+        describe("ClassToTest", [](){
             return make_testbundle(
                 {
-                    it(L"should do the thing", [](){
+                    it("should do the thing", [](){
                         // Throw exception if somethings goes wrong
 
 
@@ -29,16 +29,13 @@ testresults_t test_ClassToTest_main(int argc, const vector<wstring>& argv) {
                         return (test_t){};
                     }),
 
-                    it(L"should do the other thing", [](){
-                        return (test_t){};
+                    it("should do the other thing", [](){
                     }),
 
-                    it(L"should not do the bad thing", [](){
-                        return (test_t){};
+                    it("should not do the bad thing", [](){
                     }),
 
-                    it(L"should throw an exception if we do the other bad thing", [](){
-                        return (test_t){};
+                    it("should throw an exception if we do the other bad thing", [](){
                     }),
                 },
                 make_describeoptions()
@@ -50,16 +47,16 @@ testresults_t test_ClassToTest_main(int argc, const vector<wstring>& argv) {
     );
 }
 
-testresults_t test_temp(int argc, const vector<wstring>& argv) {
+testresults_t test_temp(const vector<string>& argv) {
     return execute(
-        describe(L"ClassToTest", [](){
+        describe("ClassToTest", [](){
             return make_testbundle({
-                describe(L"FeatureToTest", [](){
+                describe("FeatureToTest", [](){
                     return make_testbundle({
-                        // it(L"should do the thing", [](){
+                        // it("should do the thing", [](){
 
                         // }),
-                        // it(L"should not do the other thing", [](){
+                        // it("should not do the other thing", [](){
 
                         // }),
                     }, make_describeoptions());
@@ -70,11 +67,11 @@ testresults_t test_temp(int argc, const vector<wstring>& argv) {
 }
 
 // Exmple of nested describes.
-testresults_t test_something(int argc, const vector<wstring>& argv) {
+testresults_t test_something(const vector<string>& argv) {
     return execute(
-        describe(L"", [](){
+        describe("", [](){
             return make_testbundle({
-                describe(L"", [](){
+                describe("", [](){
                     return make_testbundle({
 
                     }, make_describeoptions());
@@ -84,9 +81,9 @@ testresults_t test_something(int argc, const vector<wstring>& argv) {
     );
 }
 
-testresults_t test_ClassToTest_2(int argc, const vector<wstring>& argv) {
+testresults_t test_ClassToTest_2(const vector<string>& argv) {
     return execute(
-        describe(L"ClassToTest", [](){
+        describe("ClassToTest", [](){
             return make_testbundle({
                 },
                 make_describeoptions()
@@ -101,15 +98,15 @@ testresults_t test_ClassToTest_2(int argc, const vector<wstring>& argv) {
 // Dummy test harness
 int main(int argc, char* argv[]) {
     try {
-        testresults_t results = make_testresults();
+        vector<string> args;
+        testresults_t results;
 
-        results = add(results, test_ClassToTest_main(0, vector<wstring>()));
+        results = add(results, test_ClassToTest_main(args));
 
-        print_test_results(results, wcout);
+        print_test_results(results, cout);
     }
     catch (std::runtime_error ex) {
-        std::cout << ex.what() << endl;
-        // wcout << L"Unhandled exception: " << ex.what() << endl;
+        std::cout << "Unhandled exception: " << ex.what() << endl;
     }
 
     return 0;

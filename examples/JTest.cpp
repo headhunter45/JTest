@@ -2,10 +2,10 @@
 #include <stdexcept>
 
 namespace JTest {
-    using std::wostream;
+    using std::ostream;
     using std::endl;
     using std::vector;
-    using std::wstring;
+    using std::string;
     using std::runtime_error;
     using std::string;
     using std::optional;
@@ -34,9 +34,9 @@ namespace JTest {
         return {l.total + r.total, l.skipped + r.skipped, l.passed + r.passed, l.failed + r.failed};
     }
 
-    void print_test_results(const testresults_t& results, wostream& out) {
-        out << L"Tests: " << results.total << endl;
-        out << L"Failed: " << results.failed << ", Passed: " << results.passed << ", Skipped: " << results.skipped << endl; 
+    void print_test_results(const testresults_t& results, ostream& out) {
+        out << "Tests: " << results.total << endl;
+        out << "Failed: " << results.failed << ", Passed: " << results.passed << ", Skipped: " << results.skipped << endl; 
     }
 
     testresults_t operator+(const testresults_t& left, const testresults_t& right) {
@@ -87,10 +87,14 @@ namespace JTest {
         return {};
     }
 
-    testbundle_t it(const wstring& label, const make_test_fn& test_method, optional<testoptions_t> options) {
+    // TODO test_method is the actual test method. We should save it to the test instead of executing it.
+    testbundle_t it(const string& label, const test_fn& test_method, optional<testoptions_t> options) {
         // TODO: Stop ignoring options.
-        test_t test = test_method();
-        return make_testbundle(label, {test});
+        test_t test;
+            test._disabled = false;
+            test._label = label;
+            test._test_method = test_method;
+        return make_testbundle("", {test});
     }
 
     testresults_t execute(testbundle_t bundle) {
@@ -173,7 +177,7 @@ namespace JTest {
         return bundle;
     }
 
-    testbundle_t make_testbundle(const wstring& label, const vector<test_t>& tests) {
+    testbundle_t make_testbundle(const string& label, const vector<test_t>& tests) {
         testbundle_t bundle;
         bundle._label = label;
         bundle._tests.clear();
@@ -201,9 +205,9 @@ namespace JTest {
 
     // TODO: Use these to make the unimplemented_* errors simpler to call.
     // For this function
-    // testbundle_t describe(const std::wstring& label, const make_testbundle_fn& make_tests, std::optional<describeoptions_t> options)
+    // testbundle_t describe(const std::string& label, const make_testbundle_fn& make_tests, std::optional<describeoptions_t> options)
     // __PRETTY_FUNCTION__
-    // Unimplemented function: JTest::testbundle_t JTest::describe(const std::wstring &, const JTest::make_testbundle_fn &, std::optional<describeoptions_t>)
+    // Unimplemented function: JTest::testbundle_t JTest::describe(const std::string &, const JTest::make_testbundle_fn &, std::optional<describeoptions_t>)
     // __FUNCSIG__ is not defined on clang++
     // __func__
     // describe

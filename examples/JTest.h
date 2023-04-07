@@ -1,12 +1,12 @@
 #include <iostream> // TODO: Maybe just ostream.
 
 namespace JTest {
-    using std::wostream;
+    using std::ostream;
     // TODO: Consider making testresults_t a class so we can hide the vectors behind accessor methods void add(...), T get(), vector<T> get(uint32_t index)
 
     struct testbundle_t;
     struct test_t;
-    typedef std::function<test_t()> make_test_fn;
+    typedef std::function<void()> test_fn;
     typedef std::function<testbundle_t()> make_testbundle_fn;
     typedef std::function<void()> configure_fn;
 
@@ -20,15 +20,20 @@ namespace JTest {
         // vector<testmethod_t> skipped;
     };
 
-    struct test_t {};
+        std::string _label;
+        test_fn _test_method;
+        bool _disabled;
+    };
+
     struct testbundle_t {
-        std::wstring _label;
+        std::string _label;
         std::vector<test_t> _tests;
         std::vector<testbundle_t> _children;
         std::optional<configure_fn> _beforeEach;
         std::optional<configure_fn> _afterEach;
         std::optional<configure_fn> _beforeAll;
-        std::optional<configure_fn> _afterAll; 
+        std::optional<configure_fn> _afterAll;
+        bool _disabled;
     };
 
     struct describeoptions_t {
@@ -56,25 +61,24 @@ namespace JTest {
     testresults_t make_testresults();
     testresults_t make_testresults(uint32_t total, uint32_t skipped, uint32_t passed, uint32_t failed);
     testresults_t add(const testresults_t&, const testresults_t&);
-    void print_test_results(const testresults_t&, wostream&);
+    void print_test_results(const testresults_t&, ostream&);
 
     // Executes the tests in tests. Possibly in parallel. Will block until all async tests have completed.
     testresults_t execute(testbundle_t tests);
+    testresults_t execute(test_t test);
 
     // 
-    testbundle_t describe(const std::wstring& label, const make_testbundle_fn& make_tests, std::optional<describeoptions_t> options = std::nullopt);
+    testbundle_t describe(const std::string& label, const make_testbundle_fn& make_tests, std::optional<describeoptions_t> options = std::nullopt);
+    testbundle_t xdescribe(const std::string& label, const make_testbundle_fn& make_tests, std::optional<describeoptions_t> options = std::nullopt);
 
     testbundle_t make_testbundle(const std::vector<testbundle_t>& tests, const describeoptions_t& options);
-    // testbundle_t make_testbundle( initializer_list tests, const testoptions_t& options);
-
+    
     // TODO: Make this return a test_t instead.
-    // TOOD: Bake make_test_fn not need to return testresults_t. Method calls should be surrounded with try/catch.
-    //   The label should be extracted from the test_t it returns.
-    //   The testresults_t should be constructed based on the try/catch block and whether this was called as it/xit.
-    testbundle_t it(const std::wstring& label, const make_test_fn& test_method, std::optional<testoptions_t> options = std::nullopt);
+    testbundle_t it(const std::string& label, const test_fn& test_method, std::optional<testoptions_t> options = std::nullopt);
+    testbundle_t xit(const std::string& label, const test_fn& test_method, std::optional<testoptions_t> options = std::nullopt);
 
     describeoptions_t make_describeoptions();
 
-    testbundle_t make_testbundle(const std::wstring& label, const std::vector<test_t>& tests);
+    testbundle_t make_testbundle(const std::string& label, const std::vector<test_t>& tests);
 
 }
