@@ -20,6 +20,7 @@ namespace JTest {
         // vector<testmethod_t> skipped;
     };
 
+    struct test_t {
         std::string _label;
         test_fn _test_method;
         bool _disabled;

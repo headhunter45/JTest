@@ -97,27 +97,57 @@ namespace JTest {
         return make_testbundle("", {test});
     }
 
-    testresults_t execute(testbundle_t bundle) {
-/*
-        Try to do this in parallel where possible
+    testbundle_t xit(const string& label, const test_fn& test_method, optional<testoptions_t> options) {
+        // TODO: replace this with a call to it and setting _disabled to true after it and xit are made to return test_t.
+        test_t test;
+            test._disabled = true;
+            test._label = label;
+            test._test_method = test_method;
+        return make_testbundle("", {test});
+    }
 
-        If the bundle is marked as disabled (xdescribe) report all the tests in it and child bundles as SKIPPED.
+    testresults_t execute(testbundle_t bundle) {
         testresults_t results;
-        try {
-            bundle.beforeAll();
-            for each child of bundle.children
-                results += execute(child)
-            for each test of bundle.tests
-                results += execute(test)
-            bundle.afterAll();
-        } catch (...) {
-            Report as much info as possible. This likely means something happened in beforeAll() or afterAll().
+
+        if (bundle._disabled) { 
+            // TODO: recursively report all tests as skipped.
+        } else {
+            try {
+                // TODO: Try to do this in parallel where possible
+                if (bundle._beforeAll.has_value()) {
+                    bundle._beforeAll.value()();
+                }
+                for_each(bundle._children.begin(), bundle._children.end(), [&results](testbundle_t bundle) {
+                    // TODO: Find a way to make child tests get our beforeEach and afterEach callbacks.
+                    results += execute(bundle);
+                });
+                // TODO: Consider capturing these callbacks differently. Without the bundle? By value?
+                for_each(bundle._tests.begin(), bundle._tests.end(), [&results, &bundle](test_t test) {
+                    if (bundle._beforeEach.has_value()) {
+                        bundle._beforeEach.value()();
+                    }
+                    results += execute(test);
+                    if (bundle._afterEach.has_value()) {
+                        bundle._afterEach.value()();
+                    }
+                });
+                if (bundle._afterAll.has_value()) {
+                    bundle._afterAll.value()();
+                }
+            } catch(...) {
+                // TODO: Log this and mark the tests as failed.
+                //   Report as much info as possible. This likely means something happened in beforeAll() or afterAll().
+            }
         }
-*/
         throw unimplemented_function_error("execute(testbundle_t)");
     }
 
     testresults_t execute(test_t test) {
+        int status = 0;
+        if (test._disabled) {
+
+        }
+        
 /*
         status = PASSED (PASSED, FAILED, SKIPPED (PENDING | DISABLED), QUEUED, RUNNING) QUEUED and RUNNING might not make sense.
         If the test is marked as disabled (xit) then record it as a skipped test and return.
@@ -164,9 +194,10 @@ namespace JTest {
         }
     }
 
-    testbundle_t describe(const wstring& label, const make_testbundle_fn& make_tests, optional<describeoptions_t> options) {
+    testbundle_t describe(const string& label, const make_testbundle_fn& make_tests, optional<describeoptions_t> options) {
         testbundle_t bundle = make_tests();
         bundle._label = label;
+        bundle._disabled = false;
         if (options.has_value()) {
             describeoptions_t options_v = options.value();
             bundle._afterAll = combine(options_v.getAfterAll(), bundle._afterAll);
