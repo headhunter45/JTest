@@ -1,12 +1,10 @@
-// #include <JTest.h>
-#include "JTest.h"
-#include "ClassToTest.h"
+#include <JTest/JTest.h>
 #include <string>
 #include <vector>
 #include <tuple>
 #include <stdexcept>
 #include <iostream>
-#include <sstream>
+#include "ClassToTest.h"
 
 using namespace JTest;
 using namespace MyNS;
@@ -16,27 +14,31 @@ using std::vector;
 using std::cout;
 using std::exception;
 using std::endl;
+using std::runtime_error;
 
 // const vector<string>& might stop being a reference
-testresults_t test_ClassToTest_main(const vector<string>& argv) {
+TestResults test_ClassToTest_main(const vector<string>& argv) {
     return execute(
         describe("ClassToTest", [](){
-            return make_testbundle(
+            return TestBundle(
                 {
                     it("should do the thing", [](){
                         // Throw exception if somethings goes wrong
                     }),
 
                     it("should do the other thing", [](){
+                        pending("we havent made the other thing yet");
                     }),
 
                     it("should not do the bad thing", [](){
+                        fail("it did the bad thing");
                     }),
 
                     it("should throw an exception if we do the other bad thing", [](){
+                        throw runtime_error("Bad thing happen.");
                     }),
                 },
-                make_describeoptions()
+                DescribeOptions()
                     .beforeEach([](){})
                     .afterEach([](){})
                     .beforeAll([](){})
@@ -45,46 +47,46 @@ testresults_t test_ClassToTest_main(const vector<string>& argv) {
     );
 }
 
-testresults_t test_temp(const vector<string>& argv) {
+TestResults test_temp(const vector<string>& args) {
     return execute(
         describe("ClassToTest", [](){
-            return make_testbundle({
+            return TestBundle({
                 describe("FeatureToTest", [](){
-                    return make_testbundle({
+                    return TestBundle({
                         // it("should do the thing", [](){
 
                         // }),
                         // it("should not do the other thing", [](){
 
                         // }),
-                    }, make_describeoptions());
+                    }, DescribeOptions());
                 }),
-                }, make_describeoptions());
+                }, DescribeOptions());
         })
     );
 }
 
 // Exmple of nested describes.
-testresults_t test_something(const vector<string>& argv) {
+TestResults test_something(const vector<string>& argv) {
     return execute(
         describe("", [](){
-            return make_testbundle({
+            return TestBundle({
                 describe("", [](){
-                    return make_testbundle({
+                    return TestBundle({
 
-                    }, make_describeoptions());
-                }, make_describeoptions()),
-            }, make_describeoptions());
+                    }, DescribeOptions());
+                }, DescribeOptions()),
+            }, DescribeOptions());
         })
     );
 }
 
-testresults_t test_ClassToTest_2(const vector<string>& argv) {
+TestResults test_ClassToTest_2(const vector<string>& argv) {
     return execute(
         describe("ClassToTest", [](){
-            return make_testbundle({
+            return TestBundle({
                 },
-                make_describeoptions()
+                DescribeOptions()
                     .beforeEach([](){})
                     .afterEach([](){})
                     .beforeAll([](){})
@@ -92,118 +94,23 @@ testresults_t test_ClassToTest_2(const vector<string>& argv) {
         })
     );
 }
-
-template<typename T>
-class Expectable {
-    public:
-        Expectable(const T& actual);
-        virtual ~Expectable();
-        virtual void toEqual(const T& value);
-        virtual void toNotEqual(const T& value);
-        // Maybe these funcs should return tuple<bool, string> instead.
-        virtual void toBe(std::function<std::tuple<bool, std::optional<std::string>>(const T& actual)> evaluator);
-        //virtual void toBeNull();
-        //virtual void toNotBeNull();
-        //virtual void toThrow(...);
-    private:
-        const T& actual_;
-};
-
-template<typename T>
-Expectable<T>::Expectable(const T& actual)
-: actual_(actual) {}
-
-template<typename T>
-Expectable<T>::~Expectable() {}
-
-class FailedExpectation: std::runtime_error {
-    public:
-        FailedExpectation(const std::string& message);
-        virtual ~FailedExpectation();
-};
-
-FailedExpectation::FailedExpectation(const std::string& message)
-: runtime_error(message) {
-}
-
-FailedExpectation::~FailedExpectation() {}
-
-template<typename T>
-void Expectable<T>::toEqual(const T& value) {
-    if (actual_ != value) {
-        std::ostringstream os;
-        os << "Expected: " << actual_ << " to be " << value;
-        throw(FailedExpectation(os.str()));
-    }
-}
-
-template<typename T>
-void Expectable<T>::toNotEqual(const T& value) {
-    if (actual_ == value) {
-        std::ostringstream os;
-        os << "Expected: " << actual_ << " to not be " << value;
-        throw(FailedExpectation(os.str()));
-    }
-}
-
-template<typename T>
-void Expectable<T>::toBe(std::function<std::tuple<bool, std::optional<std::string>>(const T& actual)> evaluator) {
-    auto result = evaluator(actual_);
-    if (!std::get<0>(result)) {
-        std::ostringstream os;
-        // std::optional<std::string> message = std::get<1>;
-        std::optional<std::string> message = std::get<1>(result);
-        if (message.has_value()) {
-            os << "Expected: " << actual_ << " to pass validation, but " << message.value();
-        } else {
-            os << "Expected: " << actual_ << " to pass validation.";
-        }
-        throw(FailedExpectation(os.str()));
-    }
-}
-
-// template<typename T>
-// void Expectable<T>::toBeNull() {
-//     if (actual_ != nullptr) {
-//         std::ostringstream os;
-//         os << "Expected null, but got " << actual_;
-//         throw(FailedExpectation(os.str()));
-//     }
-// }
-
-// template<typename T>
-// void Expectable<T>::toNotBeNull() {
-//     if (actual_ == nullptr) {
-//         throw(FailedExpectation("Expected non-null, but got null"));
-//     }
-// }
-
-// template<typename T>
-// void Expectable<T>::toThrow(...) {}
-
-template<typename T>
-Expectable<T> expect(const T& actual);
-
-template<typename T>
-Expectable<T> expect(const T& actual) {
-    return Expectable<T>(actual);
-}
         
 int MyAddFunction(int a, int b) {
-    return 0;
+    return a+b;
 }
 
-testresults_t test_BasicExpectable_main(const vector<string>& argv) {
+TestResults test_BasicExpectable_main(const vector<string>& argv) {
     return execute(
         describe("MyAddFunction", [](){
-            return make_testbundle({
+            return TestBundle({
                 it("should add 2 and 2 to get 4", [](){
                     expect(MyAddFunction(2, 2)).toEqual(4);
                 }),
-                it("should ", [](){
+                it("should fail", [](){
+                    fail("because I said so");
                     // Throw exception if somethings goes wrong
                 }),
-            }, make_describeoptions());
+            }, DescribeOptions());
         }));
 }
 
@@ -211,12 +118,15 @@ testresults_t test_BasicExpectable_main(const vector<string>& argv) {
 int main(int argc, char* argv[]) {
     try {
         vector<string> args;
-        testresults_t results;
+        TestResults results;
 
-        results = add(results, test_ClassToTest_main(args));
-        results = add(results, test_BasicExpectable_main(args));
+        results += test_ClassToTest_main(args);
+        // results += test_BasicExpectable_main(args);
+        // results += test_ClassToTest_2(args);
+        // results += test_something(args);
+        // results += test_temp(args);
 
-        print_test_results(results, cout);
+        cout << results << endl;
     }
     catch (std::runtime_error ex) {
         std::cout << "Unhandled exception: " << ex.what() << endl;
