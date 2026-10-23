@@ -4,6 +4,7 @@ namespace JTest {
     template<typename T>
     class Expectable;
 }
+#include <cstring>
 #include <functional>
 #include <string>
 #include <sstream>
@@ -113,10 +114,10 @@ namespace JTest {
                         reason = ", but did not throw";
                     }
                 } catch(const std::exception& actual) {
-                    has_failed = is_true(strcmp(expected.what(), actual.what()) == 0);
+                    has_failed = is_true(std::strcmp(expected.what(), actual.what()) == 0);
                     if (has_failed) {
                         throw FailedExpectation(make_failure_message("to throw", expected.what(), actual.what()));
-                        reason = string(is_inverted_ ? "" : ", but threw ") + actual.what();
+                        reason = std::string(is_inverted_ ? "" : ", but threw ") + actual.what();
                     }
                 } catch(...) {
                     has_failed = is_false();
